@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Image } from 'react-native';
 
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import api from '../../services/api';
 import formatValue from '../../utils/formatValue';
 
@@ -18,7 +21,7 @@ import {
   FoodPricing,
 } from './styles';
 
-interface Food {
+export interface Food {
   id: number;
   name: string;
   description: string;
@@ -27,12 +30,32 @@ interface Food {
   formattedPrice: string;
 }
 
+type RootStackParamList = {
+  FoodDetails: {id: number} | undefined;
+};
+
 const Favorites: React.FC = () => {
   const [favorites, setFavorites] = useState<Food[]>([]);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  async function handleNavigate(foodId: number): Promise<void> {
+    navigation.navigate('FoodDetails', {
+      id: foodId
+    });
+  }
 
   useEffect(() => {
     async function loadFavorites(): Promise<void> {
-      // Load favorite foods from api
+      const response = await api.get('/favorites');
+
+      const responseFormatted: Food[] = response.data.map(
+        (favorite: Food) => ({
+          ...favorite,
+          formattedPrice: formatValue(favorite.price),
+        })
+      );
+
+      setFavorites(responseFormatted);
     }
 
     loadFavorites();
@@ -47,19 +70,23 @@ const Favorites: React.FC = () => {
       <FoodsContainer>
         <FoodList
           data={favorites}
-          keyExtractor={item => String(item.id)}
-          renderItem={({ item }) => (
-            <Food activeOpacity={0.6}>
+          keyExtractor={favorite => String(favorite.id)}
+          renderItem={({ item: favorite }) => (
+            <Food
+              key={favorite.id}
+              activeOpacity={0.6}
+              onPress={() => handleNavigate(favorite.id)}
+            >
               <FoodImageContainer>
                 <Image
                   style={{ width: 88, height: 88 }}
-                  source={{ uri: item.thumbnail_url }}
+                  source={{ uri: favorite.thumbnail_url }}
                 />
               </FoodImageContainer>
               <FoodContent>
-                <FoodTitle>{item.name}</FoodTitle>
-                <FoodDescription>{item.description}</FoodDescription>
-                <FoodPricing>{item.formattedPrice}</FoodPricing>
+                <FoodTitle>{favorite.name}</FoodTitle>
+                <FoodDescription>{favorite.description}</FoodDescription>
+                <FoodPricing>{favorite.formattedPrice}</FoodPricing>
               </FoodContent>
             </Food>
           )}

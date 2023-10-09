@@ -2,6 +2,7 @@ import React from 'react';
 import { Image } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Icon from 'react-native-vector-icons/Feather';
 
@@ -17,8 +18,12 @@ import {
 import Background from '../../assets/home-background.png';
 import Logo from '../../assets/logo.png';
 
+type RootStackParamList = {
+  MainBottom: { screen: string } | undefined;
+};
+
 const Home: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   async function handleNavigate(): Promise<void> {
     navigation.navigate('MainBottom', {

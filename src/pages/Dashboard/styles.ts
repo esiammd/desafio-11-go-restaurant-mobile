@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components/native';
 
 interface CategoryItemProps {
-  isSelected?: boolean;
+  $isSelected?: boolean;
 }
 
 export const Container = styled.View`
@@ -43,8 +43,6 @@ export const CategorySlider = styled.ScrollView`
 
 export const CategoryItem = styled.TouchableOpacity<CategoryItemProps>`
   background-color: #f0f0f5;
-  border: 2px;
-  border-color: #f0f0f5;
   height: 120px;
   width: 120px;
   border-radius: 8px;
@@ -55,7 +53,7 @@ export const CategoryItem = styled.TouchableOpacity<CategoryItemProps>`
   justify-content: space-between;
   text-align: center;
   ${props =>
-    props.isSelected &&
+    props.$isSelected &&
     css`
       border-color: #c72828;
       background-color: #ffebeb;

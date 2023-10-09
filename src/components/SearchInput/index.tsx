@@ -23,7 +23,7 @@ const SearchInput: React.FC<InputProps> = ({ value = '', ...rest }) => {
   }, [value]);
 
   return (
-    <Container isFocused={isFocused}>
+    <Container $isFocused={isFocused}>
       <Icon
         name="search"
         size={20}

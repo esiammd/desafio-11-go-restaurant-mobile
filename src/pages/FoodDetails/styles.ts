@@ -7,7 +7,7 @@ export const Container = styled.View`
 
 export const Header = styled.View`
   padding: 40px 24px 20px;
-  background: #c72828;
+  background: #C72828;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -75,7 +75,7 @@ export const FoodPricing = styled.Text`
 `;
 
 export const Title = styled.Text`
-  font-family: Poppins;
+  font-family: 'Poppins-Regular';
   font-style: normal;
   font-weight: 600;
   font-size: 20px;
@@ -127,7 +127,7 @@ export const PriceButtonContainer = styled.View`
 `;
 
 export const TotalPrice = styled.Text`
-  font-family: 'Poppins';
+  font-family: 'Poppins-Regular';
   font-style: normal;
   font-weight: 600;
   font-size: 24px;

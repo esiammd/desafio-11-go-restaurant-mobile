@@ -5,11 +5,12 @@ import React, {
   useMemo,
   useLayoutEffect,
 } from 'react';
-import { Image } from 'react-native';
+import { Image, Alert } from 'react-native';
 
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import formatValue from '../../utils/formatValue';
 
 import api from '../../services/api';
@@ -50,61 +51,147 @@ interface Extra {
   quantity: number;
 }
 
-interface Food {
+interface FoodProps {
   id: number;
   name: string;
   description: string;
   price: number;
   image_url: string;
+  thumbnail_url: string;
   formattedPrice: string;
   extras: Extra[];
+  category: number;
 }
 
+type RootStackParamList = {
+  MainBottom: { screen: string } | undefined;
+};
+
 const FoodDetails: React.FC = () => {
-  const [food, setFood] = useState({} as Food);
+  const [food, setFood] = useState({} as FoodProps);
   const [extras, setExtras] = useState<Extra[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [foodQuantity, setFoodQuantity] = useState(1);
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
 
   const routeParams = route.params as Params;
 
   useEffect(() => {
     async function loadFood(): Promise<void> {
-      // Load a specific food with extras based on routeParams id
+      const response = await api.get(`/foods/${routeParams.id}`);
+
+      const responseFormatted: FoodProps = {
+        ...response.data,
+        formattedPrice: formatValue(response.data.price),
+        extras: response.data.extras.map((extra: Extra) => (
+          {...extra, quantity: 0})
+        ),
+      };
+
+      setFood(responseFormatted);
+      setExtras(responseFormatted.extras);
     }
 
     loadFood();
   }, [routeParams]);
 
+  useEffect(() => {
+    async function loadFavorite(): Promise<void> {
+      const response = await api.get('/favorites');
+
+      const findFavorite = response.data.find(
+        (favorite: Omit<FoodProps, 'formattedPrice' | 'extras'>) =>
+        favorite.id === routeParams.id
+      );
+
+      if (findFavorite) {
+        setIsFavorite(true);
+      }
+    }
+
+    loadFavorite();
+  }, [routeParams]);
+
   function handleIncrementExtra(id: number): void {
-    // Increment extra quantity
+    setExtras(extras.map(extra =>
+      extra.id === id ? {...extra, quantity: extra.quantity + 1} : extra
+    ));
   }
 
   function handleDecrementExtra(id: number): void {
-    // Decrement extra quantity
+    setExtras(extras.map(extra =>
+      extra.id === id ?
+        extra.quantity === 0 ? extra : {...extra, quantity: extra.quantity - 1}
+      : extra
+    ));
   }
 
   function handleIncrementFood(): void {
-    // Increment food quantity
+    setFoodQuantity(foodQuantity + 1);
   }
 
   function handleDecrementFood(): void {
-    // Decrement food quantity
+    if (foodQuantity === 1) {
+      return;
+    }
+
+    setFoodQuantity(foodQuantity - 1);
   }
 
+  const handleOkPressed = useCallback(() => {
+    navigation.reset({
+      routes: [
+        { name: 'MainBottom' },
+      ],
+      index: 0,
+    });
+  }, [navigation.reset]);
+
   const toggleFavorite = useCallback(() => {
-    // Toggle if food is favorite or not
+    if (isFavorite) {
+      api.delete(`/favorites/${food.id}`);
+    } else {
+      api.post('/favorites', food);
+    }
+
+    setIsFavorite(!isFavorite);
   }, [isFavorite, food]);
 
   const cartTotal = useMemo(() => {
-    // Calculate cartTotal
+    const foodTotal = food.price;
+    const extraTotal = extras.reduce((accumulator, extra) => {
+      return accumulator + (extra.value * extra.quantity);
+    }, 0);
+
+    const total = (Number(foodTotal) + Number(extraTotal)) * foodQuantity;
+
+    return {
+      value: total,
+      formatValue: formatValue(total),
+    };
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
-    // Finish the order and save on the API
+    const order = {
+      product_id: food.id,
+      name: food.name,
+      description: food.description,
+      price: food.price,
+      quantity: foodQuantity,
+      category: food.category,
+      image_url: food.image_url,
+      thumbnail_url: food.thumbnail_url,
+      extras,
+      total: cartTotal.value,
+    };
+
+    await api.post('/orders', order);
+
+    Alert.alert('Pedido confirmado!', '', [
+      {text: 'OK', onPress: () => handleOkPressed()}
+    ]);
   }
 
   // Calculate the correct icon name
@@ -126,6 +213,18 @@ const FoodDetails: React.FC = () => {
       ),
     });
   }, [navigation, favoriteIconName, toggleFavorite]);
+
+  useLayoutEffect(() => {
+    async function loadCategory(): Promise<void> {
+      const response = await api.get(`/categories/${food.category}`);
+
+      navigation.setOptions({
+        headerTitle: `Prato - ${response.data.title}`,
+      });
+    }
+
+    loadCategory();
+  }, [food.category]);
 
   return (
     <Container>
@@ -179,7 +278,7 @@ const FoodDetails: React.FC = () => {
         <TotalContainer>
           <Title>Total do pedido</Title>
           <PriceButtonContainer>
-            <TotalPrice testID="cart-total">{cartTotal}</TotalPrice>
+            <TotalPrice testID="cart-total">{cartTotal.formatValue}</TotalPrice>
             <QuantityContainer>
               <Icon
                 size={15}

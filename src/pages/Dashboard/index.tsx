@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Image, ScrollView } from 'react-native';
-
 import Icon from 'react-native-vector-icons/Feather';
+
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import Logo from '../../assets/logo-header.png';
 import SearchInput from '../../components/SearchInput';
 
@@ -43,6 +45,11 @@ interface Category {
   image_url: string;
 }
 
+type RootStackParamList = {
+  Home: undefined;
+  FoodDetails: {id: number} | undefined;
+};
+
 const Dashboard: React.FC = () => {
   const [foods, setFoods] = useState<Food[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -51,15 +58,31 @@ const Dashboard: React.FC = () => {
   >();
   const [searchValue, setSearchValue] = useState('');
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  async function handleNavigate(id: number): Promise<void> {
-    // Navigate do ProductDetails page
+  async function handleNavigate(foodId: number): Promise<void> {
+    navigation.navigate('FoodDetails', {
+      id: foodId,
+    });
   }
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // Load Foods from API
+      const response = await api.get('/foods', {
+        params: {
+          category_like: selectedCategory,
+          name_like: searchValue,
+        }
+      });
+
+      const responseFormatted: Food[] = response.data.map(
+        (food: Food) => ({
+          ...food,
+          formattedPrice: formatValue(food.price),
+        })
+      );
+
+      setFoods(responseFormatted);
     }
 
     loadFoods();
@@ -67,14 +90,20 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadCategories(): Promise<void> {
-      // Load categories from API
+      const response =  await api.get('/categories');
+
+      setCategories(response.data);
     }
 
     loadCategories();
   }, []);
 
-  function handleSelectCategory(id: number): void {
-    // Select / deselect category
+  function handleSelectCategory(categoryId: number): void {
+    if (selectedCategory === categoryId) {
+      setSelectedCategory(undefined);
+    } else {
+      setSelectedCategory(categoryId);
+    }
   }
 
   return (
@@ -108,7 +137,7 @@ const Dashboard: React.FC = () => {
             {categories.map(category => (
               <CategoryItem
                 key={category.id}
-                isSelected={category.id === selectedCategory}
+                $isSelected={category.id === selectedCategory}
                 onPress={() => handleSelectCategory(category.id)}
                 activeOpacity={0.6}
                 testID={`category-${category.id}`}

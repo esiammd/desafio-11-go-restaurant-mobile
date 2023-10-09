@@ -1,33 +1,32 @@
 import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import { NavigationContainer } from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-import { View } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import TabRoutes from './tab.routes';
 
 import Home from '../pages/Home';
 import FoodDetails from '../pages/FoodDetails';
+import OrderDetails from '../pages/OrderDetails';
 
-const App = createStackNavigator();
+const App = createNativeStackNavigator();
 
-const AppRoutes: React.FC = () => (
-  <NavigationContainer>
+const AppRoutes: React.FC = () => {
+  return (
     <App.Navigator initialRouteName="Home">
       <App.Screen
+        name='Home'
+        component={Home}
         options={{
-          cardStyle: { backgroundColor: '#C72828' },
+          contentStyle: {backgroundColor: '#C72828'},
           headerShown: false,
         }}
-        name="Home"
-        component={Home}
       />
       <App.Screen
         name="MainBottom"
         component={TabRoutes}
         options={{
-          headerShown: false,
           gestureEnabled: false,
+          headerShown: false,
         }}
       />
       <App.Screen
@@ -49,22 +48,49 @@ const AppRoutes: React.FC = () => (
           headerRightContainerStyle: {
             marginRight: 24,
           },
-          headerTitle: 'Prato - Massas',
+          headerTitle: 'Prato -',
           headerTitleStyle: {
             color: '#fff',
             fontFamily: 'Poppins-Regular',
             fontSize: 16,
           },
+          headerTitleAlign: 'center',
           headerStyle: {
             backgroundColor: '#C72828',
-            elevation: 0,
-            borderWidth: 0,
-            shadowColor: 'transparent',
           },
+          headerShadowVisible: false,
+        })}
+      />
+      <App.Screen
+        name="OrderDetails"
+        component={OrderDetails}
+        options={({ navigation }) => ({
+          headerLeft: () => (
+            <Icon
+              name="arrow-left"
+              size={24}
+              color="#FFB84D"
+              onPress={() => navigation.goBack()}
+            />
+          ),
+          headerLeftContainerStyle: {
+            marginLeft: 24,
+          },
+          headerTitle: '',
+          headerTitleStyle: {
+            color: '#fff',
+            fontFamily: 'Poppins-Regular',
+            fontSize: 16,
+          },
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#C72828',
+          },
+          headerShadowVisible: false,
         })}
       />
     </App.Navigator>
-  </NavigationContainer>
-);
+  );
+};
 
 export default AppRoutes;
